@@ -35,50 +35,44 @@ export const App: React.FC = () => {
     setIsReversed(false);
   };
 
-  const prepareGoods = (type: SortType) => {
-    if (type === SortType.Reverse) {
-      setVisibleGoods([...visibleGoods].reverse());
+  const prepareGoods = (type?: SortType, reversedState?: boolean) => {
+    const sortTypeToUse = type || sortField;
+    const shouldReverse =
+      reversedState !== undefined ? reversedState : isReversed;
 
-      return;
+    const newGoods = [...goodsFromServer];
+
+    switch (sortTypeToUse) {
+      case SortType.Alphabetically:
+        newGoods.sort((good1, good2) => good1.localeCompare(good2));
+        break;
+      case SortType.Length:
+        newGoods.sort((good1, good2) => good1.length - good2.length);
+        break;
+      case SortType.Default:
+      default:
+        break;
     }
 
-    if (isReversed) {
-      setVisibleGoods(
-        [...goodsFromServer]
-          .sort((good1: string, good2: string) => {
-            switch (type) {
-              case SortType.Alphabetically:
-                setSortField(type);
-
-                return good1.localeCompare(good2);
-              case SortType.Length:
-                setSortField(type);
-
-                return +good1.length - good2.length;
-              default:
-                return 0;
-            }
-          })
-          .reverse(),
-      );
-    } else {
-      setVisibleGoods(
-        [...goodsFromServer].sort((good1: string, good2: string) => {
-          switch (type) {
-            case SortType.Alphabetically:
-              setSortField(type);
-
-              return good1.localeCompare(good2);
-            case SortType.Length:
-              setSortField(type);
-
-              return +good1.length - good2.length;
-            default:
-              return 0;
-          }
-        }),
-      );
+    if (shouldReverse) {
+      newGoods.reverse();
     }
+
+    if (type) {
+      setSortField(sortTypeToUse);
+    }
+
+    setVisibleGoods(newGoods);
+  };
+
+  const toggleReverse = () => {
+    setIsReversed(prevIsReversed => {
+      const newIsReversed = !prevIsReversed;
+
+      prepareGoods(undefined, newIsReversed);
+
+      return newIsReversed;
+    });
   };
 
   return (
@@ -109,10 +103,7 @@ export const App: React.FC = () => {
           className={classNames('button is-warning', {
             'is-light': !isReversed,
           })}
-          onClick={() => {
-            setIsReversed(!isReversed);
-            prepareGoods(SortType.Reverse);
-          }}
+          onClick={toggleReverse}
         >
           Reverse
         </button>
